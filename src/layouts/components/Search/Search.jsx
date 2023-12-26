@@ -10,33 +10,23 @@ import styles from './Search.module.scss';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUpload } from '@fortawesome/free-solid-svg-icons';
+import { useSpring, animated } from 'react-spring';
+import Popup from '~/components/Popup';
+import Image from '~/components/Image';
 
 const cx = classNames.bind(styles);
 
-function Search() {
+function Search () {
   const [searchValue, setSearchValue] = useState('');
   const [searchResult, setSearchResult] = useState([]);
   const [showResult, setShowResult] = useState(false);
+  const [isModalOpen2, setIsModalOpen2] = useState(false);
+  const [shoeList, setShoeList] = useState([]);
 
-  useEffect(() => {
-    if (!searchValue.trim()) {
-      setSearchResult([]);
-      return;
-    }
-    const fetchApi = async () => {
-      const response = await axios.get(`http://localhost:4000/api/shoes?search=${searchValue}&limit=5`);
-      setSearchResult(response.data.result);
-    };
-
-    fetchApi();
-  }, [searchValue]);
-
-  const handleClear = () => {
-    setSearchValue('');
-    setSearchResult([]);
-    inputRef.current.focus();
-  };
-
+  const modalAnimation2 = useSpring({
+    opacity: isModalOpen2 ? 1 : 0,
+    transform: isModalOpen2 ? 'translateY(0)' : 'translateY(-100%)',
+  });
   const handleHideResult = () => {
     setShowResult(false);
   };
@@ -55,7 +45,57 @@ function Search() {
     }
   };
 
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      const response = await axios.post('http://localhost:5000/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setShoeList(response.data.shoe_list);
+
+      openModal2();
+    } catch (error) {
+      console.error('Error uploading image:', error.message);
+    }
+  };
+
+  console.log(shoeList);
+
+  function formatCurrency (number) {
+    const formatter = new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    });
+    return formatter.format(number);
+  }
+
   const inputRef = useRef();
+  const openModal2 = () => {
+    setIsModalOpen2(true);
+  };
+
+  const closeModal2 = () => {
+    setIsModalOpen2(false);
+  };
+
+  useEffect(() => {
+    if (!searchValue.trim()) {
+      setSearchResult([]);
+      return;
+    }
+    const fetchApi = async () => {
+      const response = await axios.get(`http://localhost:4000/api/shoes?search=${searchValue}&limit=5`);
+      setSearchResult(response.data.result);
+    };
+
+    fetchApi();
+  }, [searchValue]);
+  console.log(shoeList);
 
   return (
     <div>
@@ -96,13 +136,27 @@ function Search() {
           />
           <label htmlFor="file-upload" className={cx('upload-btn')}>
             <FontAwesomeIcon icon={faUpload}></FontAwesomeIcon>
-            <input id="file-upload" type="file"></input>
+            <input id="file-upload" type="file" accept="image/*" onChange={handleImageChange} />
           </label>
           <button className={cx('search-btn')} onClick={handleSearch} onMouseDown={(e) => e.preventDefault()}>
             <Icon icon="iconamoon:search-bold" />
           </button>
         </div>
       </HeadlessTippy>
+      <Popup isOpen={isModalOpen2} onRequestClose={() => closeModal2()} width={'600px'} height={'600px'}>
+        <animated.div style={modalAnimation2}>
+          {shoeList &&
+            shoeList.map((shoe) => {
+              return (
+                <Link className={cx('information')} to={`/detailItem/${shoe.shoe_id}`}>
+                  <Image alt="Image" className={cx('order-image')} src={shoe && shoe.shoe_image}></Image>
+                  <span>Name: {shoe && shoe.shoe_name}</span>
+                  <span>{formatCurrency(shoe && shoe.price)}</span>
+                </Link>
+              );
+            })}
+        </animated.div>
+      </Popup>
     </div>
   );
 }

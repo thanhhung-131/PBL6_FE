@@ -115,3 +115,26 @@
   align-items: center;
   cursor: pointer;
 }
+
+.information {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background-color: aliceblue;
+  margin: 12px 0;
+  border-radius: 12px;
+  box-shadow: 2px 2px 2px lavender;
+  height: 90px;
+  .order-image {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin: 30px;
+  }
+
+  span:nth-child(2) {
+    width: 300px;
+  }
+}
+
